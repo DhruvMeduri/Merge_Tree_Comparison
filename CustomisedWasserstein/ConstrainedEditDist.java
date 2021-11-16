@@ -301,7 +301,7 @@ public class ConstrainedEditDist {
       for (int i = 0; i < numT2Nodes; i++) {
         JoinTree.JTNode node = T.get(i);
         //System.out.println(node.value);
-        double val = node.value + jTNodes2.get(node.pair).value;
+        double val = (node.value + jTNodes2.get(node.pair).value)/2;
         JoinTree.JTNode dummy = jt.new JTNode (-1, -1, -1, -1, val);
         weightedGraph.addVertex(dummy);
         S.add(dummy);
@@ -309,7 +309,7 @@ public class ConstrainedEditDist {
       for (int i = 0; i < numT1Nodes; i++) {
         JoinTree.JTNode node = S.get(i);
         //System.out.println(node.value);
-        double val = node.value + jTNodes1.get(node.pair).value;
+        double val = (node.value + jTNodes1.get(node.pair).value)/2;
         //System.out.println(node.value);//debug
         JoinTree.JTNode dummy = jt.new JTNode(-1, -1, -1, -1, val);
         weightedGraph.addVertex(dummy);
