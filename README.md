@@ -69,7 +69,7 @@ For example, for the tree shown in the figure, the TreeSkeleton File will read
 This file must end with the `.jt` extension.  
 The first line contains an integer `n` which is the number of nodes in the tree.  
 The next n lines contain space-separated numbers about each node as follows.  
-`nodeID parentID pers_pair_ID max_ID number_of_children childrenIDs functionValue`  
+`nodeID parentID pers_pair_ID max_ID functionValue number_of_children childrenIDs `  
 The `childrenIDs` are a space separated list of each node's children's `nodeID`.  
 We require the `parentID` of the root node to necessarily be -1.  
 
@@ -86,7 +86,7 @@ The mapping files and the graphviz files generated for the MTED are stored in fo
 ## Interactively
 After building the Python library above, you can import it using `import MergeTreeLibrary` in a python REPL or a script.
 Trees are stored as `TreeSkeleton` objects.  
-  
+
 Example  
 
 ```python
