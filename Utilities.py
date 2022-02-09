@@ -7,9 +7,9 @@ import math
 
 def single_compute (MeasureName, FileName1, arg=-1):
     rval = float("inf")
-
     if MeasureName == "TotalPers":
         rval = MergeTreeLibrary.TotalPers(FileName1, arg)
+        draw_tree(FileName1)
 
     elif MeasureName == "depth":
         T = MergeTreeLibrary.generateTree(FileName1)
@@ -250,3 +250,48 @@ def GenTreeFromJt (FileNameJT):
                 text_list_lines.append(" ".join(nodeData))
 
             TreeFile.writelines(text_list_lines)
+
+def draw_tree(FileName):
+    colors = ['red','blue','green','black', 'brown', 'yellow', 'grey', 'sienna'] # More colors maybe needed on larger trees.
+    c = 0
+    per_colored = []
+    FileName = FileName+ ".jt"
+    Filedot = FileName.replace(".jt",".dot")
+    file1 = open(Filedot,"a")
+    file1.truncate(0)
+    file2 = open(FileName,"r")
+    file1.write("digraph {\n")
+    data = file2.readlines()
+    num_nodes = int(data[0].replace('\n',''))
+    #print(num_nodes)
+    lst = []# This contains the details of all the nodes
+    for i in range(1 , num_nodes + 1 ):
+        lst.append(data[i].replace('\n','').split())
+
+    for i in lst:
+        val = round(float(i[4]),5)
+        num_child = int(i[5])
+        for j in range(num_child):
+            child = int(i[5+j+1])
+            for k in range(num_nodes):
+                if child == int(lst[k][0]):
+                    child_val = round(float(lst[k][4]),5)
+                    file1.write(str(val)+"->"+str(child_val)+"\n")
+    # Now to add the colourings for the persistence pairs
+    for i in lst:
+        val = round(float(i[4]),5)
+        per_ID = int(i[2])
+        for j in lst:
+            if per_ID == int(j[0]):
+                per_value = round(float(j[4]),5)
+        if val not in per_colored:
+           file1.write(str(val)+"[color="+colors[c]+"]\n")
+           file1.write(str(per_value)+"[color="+colors[c]+"]\n")
+           per_colored.append(val)
+           per_colored.append(per_value)
+           c = c + 1
+    file1.write("}")
+    file1.close()
+    file2.close()
+    FileName = FileName.replace("/Inputs","")
+    os.system("dot -Tsvg " + Filedot + " > " +  FileName.replace(".jt",".svg"))

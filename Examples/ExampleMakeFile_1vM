@@ -9,9 +9,10 @@ TreeC
 TreeD
 TreeE
 ./Examples/Run1vM
-2
+3
 bottleneck; plots
 COMTED; plots
+Wasserstein; plots
 2
 TotalPers; 2 normal
 pers_dist; plots normal

@@ -150,7 +150,6 @@ elif MeasureName == "Example":
 ```
 
 ## In Progress
-Wasserstein Distance  
 Implementation of `TreePair` which should reduce file input output time and hence speed up computation.  
 
 **Warnings and Remarks** - In general, after every tree manipulation such as insertion or deletion, the persistence pairings will have to be manually reset and regenerated or it might lead to the program crashing or giving undefined behaviour.  
