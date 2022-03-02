@@ -4,7 +4,11 @@ import os
 import csv
 import matplotlib.pyplot as plt
 import math
-
+import subprocess
+from PIL import Image
+import cairosvg
+from PIL import ImageFont
+from PIL import ImageDraw
 def single_compute (MeasureName, FileName1, arg=-1):
     rval = float("inf")
     if MeasureName == "TotalPers":
@@ -24,15 +28,16 @@ def single_compute (MeasureName, FileName1, arg=-1):
 def pair_compute (MeasureName, FileName1, FileName2, CompIDFolderName):
 
     rval = float("inf")
-
     if not os.path.exists(CompIDFolderName):
         os.mkdir(CompIDFolderName)
 
     if MeasureName == "bottleneck":
         rval = MergeTreeLibrary.bottleneck(FileName1, FileName2)
 
+
     elif MeasureName == "Wasserstein":
         rval = MergeTreeLibrary.Wasserstein(FileName1, FileName2)
+        SeeMatching(FileName1,FileName2)
 
     elif MeasureName == "COMTED":
         rval = MergeTreeLibrary.COMTED(FileName1, FileName2, CompIDFolderName)
@@ -252,7 +257,7 @@ def GenTreeFromJt (FileNameJT):
             TreeFile.writelines(text_list_lines)
 
 def draw_tree(FileName):
-    colors = ['red','blue','green','black', 'brown', 'yellow', 'grey', 'sienna'] # More colors maybe needed on larger trees.
+    colors = ['red','blue','green','black', 'brown', 'yellow', 'sienna'] # More colors maybe needed on larger trees.
     c = 0
     per_colored = []
     FileName = FileName+ ".jt"
@@ -295,3 +300,127 @@ def draw_tree(FileName):
     file2.close()
     FileName = FileName.replace("/Inputs","")
     os.system("dot -Tsvg " + Filedot + " > " +  FileName.replace(".jt",".svg"))
+    os.remove(Filedot)
+
+def SeeMatching(FileName1,FileName2):
+    if FileName1 != FileName2:
+        matching = subprocess.run(["java -jar SeeMatching.jar "+ FileName1 + ".jt " + FileName2 + ".jt ./"],shell=True, capture_output=True,text=True).stdout.strip()
+        matching = matching.replace('[','')
+        matching = matching.replace(']','')
+        matching = matching.replace('(','')
+        matching = matching.replace(')','')
+        matching = matching.replace(':','')
+        matching = matching.replace(',','')
+        lst = matching.split()
+        #Now to compute the pairs
+        pairs = []
+        for i in range(0,len(lst),2):
+            pairs.append([int(lst[i]),int(lst[i+1])])
+        pair1 = []
+        pair2 = []
+        for i in pairs:
+            pair1.append(i[0])
+            pair2.append(i[1])
+        # Now the matchings are ready
+        colors = ['red','blue','green', 'brown', 'yellow', 'sienna'] # More colors maybe needed on larger trees.
+        FileName1 = FileName1 + ".jt"
+        Filedot1 = FileName1.replace(".jt",".dot")
+        file1 = open(Filedot1,"a")
+        file1.truncate(0)
+        file2 = open(FileName1,"r")
+        file1.write("digraph {\n")
+        data = file2.readlines()
+        num_nodes = int(data[0].replace('\n',''))
+        #print(num_nodes)
+        lst1 = []# This contains the details of all the nodes
+        for i in range(1 , num_nodes + 1 ):
+            lst1.append(data[i].replace('\n','').split())
+
+        for i in lst1:
+            val = round(float(i[4]),5)
+            num_child = int(i[5])
+            for j in range(num_child):
+                child = int(i[5+j+1])
+                for k in range(num_nodes):
+                    if child == int(lst1[k][0]):
+                        child_val = round(float(lst1[k][4]),5)
+                        file1.write(str(val)+"->"+str(child_val)+"\n")
+
+        FileName2 = FileName2 + ".jt"
+        Filedot2 = FileName2.replace(".jt",".dot")
+        file3 = open(Filedot2,"a")
+        file3.truncate(0)
+        file4 = open(FileName2,"r")
+        file3.write("digraph {\n")
+        data = file4.readlines()
+        num_nodes = int(data[0].replace('\n',''))
+        #print(num_nodes)
+        lst2 = []# This contains the details of all the nodes
+        for i in range(1 , num_nodes + 1 ):
+            lst2.append(data[i].replace('\n','').split())
+
+        for i in lst2:
+            val = round(float(i[4]),5)
+            num_child = int(i[5])
+            for j in range(num_child):
+                child = int(i[5+j+1])
+                for k in range(num_nodes):
+                    if child == int(lst2[k][0]):
+                        child_val = round(float(lst2[k][4]),5)
+                        file3.write(str(val)+"->"+str(child_val)+"\n")
+        # Now to colour the nodes on both the graphs appropriately depicting the bipartite the matching
+        c = 0
+        for i in range(len(pair1)):
+            if pair1[i]!=-1 and pair2[i]!=-1:
+                for j in range(len(lst1)):
+                    if int(lst1[j][0])==pair1[i]:
+                        val = round(float(lst1[j][4]),5)
+                        perID = int(lst1[j][2])
+                        for k in range(len(lst1)):
+                            if int(lst1[k][0])==perID:
+                                perval = round(float(lst1[k][4]),5)
+                                file1.write(str(val)+"[color="+colors[c]+"]\n")
+                                file1.write(str(perval)+"[color="+colors[c]+"]\n")
+                for j in range(len(lst2)):
+                    if int(lst2[j][0])==pair2[i]:
+                        val = round(float(lst2[j][4]),5)
+                        perID = int(lst2[j][2])
+                        for k in range(len(lst2)):
+                            if int(lst2[k][0])==perID:
+                                perval = round(float(lst2[k][4]),5)
+                                file3.write(str(val)+"[color="+colors[c]+"]\n")
+                                file3.write(str(perval)+"[color="+colors[c]+"]\n")
+                c = c + 1
+        file1.write("}")
+        file1.close()
+        file2.close()
+        file3.write("}")
+        file3.close()
+        file4.close()
+        #FileName = FileName.replace("/Inputs","")
+        os.system("dot -Tsvg " + Filedot1 + " > " +  FileName1.replace(".jt",".svg"))
+        os.system("dot -Tsvg " + Filedot2 + " > " +  FileName2.replace(".jt",".svg"))
+        cairosvg.svg2png(url=FileName1.replace(".jt",".svg"), write_to=FileName1.replace(".jt",".png"))
+        cairosvg.svg2png(url=FileName2.replace(".jt",".svg"), write_to=FileName2.replace(".jt",".png"))
+        os.remove(FileName1.replace(".jt",".svg"))
+        os.remove(FileName2.replace(".jt",".svg"))
+        # For combining the images
+
+        images = [Image.open(x) for x in [FileName1.replace(".jt",".png"), FileName2.replace(".jt",".png")]]
+        widths, heights = zip(*(i.size for i in images))
+        total_width = sum(widths)
+        max_height = max(heights)
+        new_im = Image.new('RGB', (total_width, max_height))
+        x_offset = 0
+        for im in images:
+          new_im.paste(im, (x_offset,0))
+          x_offset += im.size[0]
+        Tree1 = FileName1.replace("./Examples/Inputs/","")
+        Tree1 = Tree1.replace(".jt","")
+        Tree2 = FileName2.replace("./Examples/Inputs/","")
+        Tree2 = Tree2.replace(".jt","")
+        new_im.save("./Examples/" + "WM" + Tree1 + Tree2 + ".png")
+        os.remove(Filedot1)
+        os.remove(Filedot2)
+        os.remove(FileName1.replace(".jt",".png"))
+        os.remove(FileName2.replace(".jt",".png"))
